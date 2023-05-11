@@ -11,9 +11,7 @@
 // -> If there has been no value calculated, the reset btn should not work
 // -> If the tips have been calculated, the reset btn should work
 
-
 // !! Figma File Link :: https://www.figma.com/file/QcBtJ2rFIPtAcCb0bxmHea/tip-calculator-app?type=design&node-id=0-1&t=vneSsg9Qw4qG6emq-0
-
 
 // Note: The elements needed have been queried for you here
 // ** Query elements
@@ -27,116 +25,86 @@ const resetBtn = document.getElementById('reset');
 
 // ** Your work goes below here
 
-// ** Event Listeners
-document.getElementById('reset').addEventListener('click', ()=> {
-  document.querySelectorAll('input').forEach(i => i.value = '');
-  resetGratuities();
-})
+let standardTip;
+let customTip;
 
-// query button, add event listener, click => reset all gratuities, set active state, set gratuity value
-gratuityBtns.forEach(btn => {
-  btn.addEventListener('click', ()=>{
-    // reset all gratuities
-    resetGratuities();
+// ** Event Listeners -- Start
+let btnArr = [...gratuityBtns];
+btnArr.forEach((btn) => {
+  btn.addEventListener('click', () => {
     btn.classList.add('active');
-    console.log("button on 42: ==> ", btn)
-    console.log("button on 42: ==> ", parseInt(btn.value))
-    
-    handleUserInput()
+    customGratuity.value = '';
+    standardTip = Number(btn.value);
+    btnArr
+      .filter((item) => {
+        return item != btn;
+      })
+      .forEach((item) => {
+        item.classList.remove('active');
+      });
+  });
+});
 
-    // if(validateBillTotal() && validateNumPeople()){
-    //   handleUserInput();
-    // }
-  })
-})
-customGratuity.addEventListener('click', () => resetGratuities())
-customGratuity.addEventListener('blur', ()=>{
-  if(validateBillTotal() && validateCustomTip() && validateNumPeople()){
-    handleUserInput();
-  } 
-})
+customGratuity.addEventListener('click', () => {
+  gratuityBtns.forEach((btn) => btn.classList.remove('active'));
+});
 
-// ** Functionality
-// function resetCalculator(){
-//   resetGratuities();
-// }
+resetBtn.addEventListener('click', () => {
+  resetForm();
+});
 
-// function validateInputs
+people.addEventListener('change', () => {
+  handleCalculations();
+});
+
+// ** Event Listeners -- End
+
+// ** Utility Functions -- Start
 
 function resetGratuities() {
-  //  document.querySelectorAll('input').forEach(i => i.value = '');
-  gratuityBtns.forEach(btn => btn.classList.remove('active'))
+  gratuityBtns.forEach((btn) => btn.classList.remove('active'));
   customGratuity.value = '';
 }
 
-function getUserInputs(){
-  const billTotal = parseFloat(bill.value);
-  const tipPercentage = getTipValue();
-  const numPeople = parseInt(people.value);
-
-  return { 
-          billTotal: billTotal, 
-          tipPercentage: tipPercentage,
-          numPeople: numPeople
-        }
+function resetForm() {
+  resetGratuities();
+  bill.value = '';
+  people.value = '';
+  splitTip.innerText = '$ 0.00';
+  splitTotal.innerText = '$ 0.00';
 }
 
-function getTipValue(){
-  const defaultTip = document.getElementsByClassName('active').value;
-  console.log('default tip: ', defaultTip)
-  let tip = null;
-  if (typeof parseInt(defaultTip) == 'number') {
-    console.log(defaultTip, " <== this is the default tip")
-    tip = parseInt(defaultTip);
-    console.log('Tip ln 86: ', tip) 
-  } else if (validateCustomTip()){
-    tip = customGratuity.value
-    console.log('Tip ln 90: ', tip)
-  }     
-  
-  return tip*0.01
-};
+function getInputs() {
+  const billTotal = Number(bill.value);
+  const totalPeople = Number(people.value);
+  customTip = Number(customGratuity.value);
 
-function validateCustomTip(){
-  const checkTip = parseFloat(customGratuity.value)
-  console.log('checking custom tip:', typeof checkTip)
-  if(typeof checkTip !== 'number'){
-    throw new Error ('Input a valid number')
-  } 
-  return true
-}
-
-function validateNumPeople(){
-  const numPeople = parseInt(people.value)
-  if(typeof numPeople !== 'number'){
-    throw new Error(`Your input of earthlings can only be a positive interger.`)
+  if (customTip === 0) {
+    return {
+      billTotal: billTotal,
+      tip: standardTip,
+      totalPeople: totalPeople,
+    };
+  } else if (customTip !== 0) {
+    return {
+      billTotal: billTotal,
+      tip: customTip,
+      totalPeople: totalPeople,
+    };
   }
-  return true
 }
 
-function validateBillTotal(){
-  const billTotal = parseInt(bill.value)
-  if(typeof billTotal !== 'number'){
-    throw new Error(`Your input of moneys can only be a non-zero positive number.`)
-  }  
-  return true
+function handleCalculations() {
+  const { billTotal, tip, totalPeople } = getInputs();
+
+  const tipAmount = billTotal * (tip * 0.01);
+  const billWithTip = tipAmount + billTotal;
+
+  const tipPerPerson = tipAmount / totalPeople;
+  const billPerPerson = billWithTip / totalPeople;
+
+  document.getElementById('split-tip').innerText = `$ ${tipPerPerson}`;
+  document.getElementById('split-total').innerText = `$ ${billPerPerson}`;
 }
 
-// ids for the tip element split-tip && split-total
-
-function handleUserInput() {
-  console.log('Handling inputs')
-  if(validateBillTotal() && validateCustomTip() && validateNumPeople()){
-    console.log('Calculating...')
-    const { billTotal, numPeople, tipPercentage} = getUserInputs();
-    console.log(billTotal, numPeople, tipPercentage)
-    const tipAmount = billTotal*tipPercentage;
-    const billWithTip = tipAmount + billTotal;
-
-    const tipPerPerson = tipAmount/numPeople;
-    const billPerPerson = billWithTip/numPeople;
-   
-    document.getElementById('split-tip').innerHTML = `$ ${tipPerPerson}`;
-    document.getElementById('split-total').innerHTML = `$ ${billPerPerson}`;
-  } 
-}
+// ** Utility Functions -- End
